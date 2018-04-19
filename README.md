@@ -2,6 +2,8 @@
 
 This repository has as main objective, replicate the [pimoroni's IS31FL3730 driver](https://github.com/pimoroni/scroll-phat/blob/master/library/scrollphat/IS31FL3730.py) to the PowerShell environment, using [PowerShell-IoT](https://github.com/PowerShell/PowerShell-IoT).
 
+[Here's](http://www.issi.com/WW/pdf/31FL3730.pdf) the chip's datasheet
+
 If you don't have PowerShell installed on your Raspberry, follow [this guide](https://github.com/PowerShell/PowerShell/blob/master/docs/installation/linux.md#raspbian) to do so.
 
 After that, you need to install [PowerShell-IoT Module](https://github.com/PowerShell/PowerShell-IoT#installation)

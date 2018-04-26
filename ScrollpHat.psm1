@@ -33,7 +33,11 @@ function Write-Char {
     #Get-NextAvailableRegister
     [int[]]$Matrix1DataRegisterAddress = 0x01 ..0x03
     [int[]]$values = 0x3E, 0x05, 0x3E
-    Set-I2CRegister -Device $Script:Device -Register $Register -Data $Value #Write the value
+    $i = 0
+    foreach ($register in $Matrix1DataRegisterAddress) {
+        Set-RegisterValue -Device $Script:Device -Register $register -Value $values[$i]
+        $i++
+    }
     Update-Registers
 }
 

@@ -8,4 +8,16 @@ If you don't have PowerShell installed on your Raspberry, follow [this guide](ht
 
 After that, you need to install [PowerShell-IoT Module](https://github.com/PowerShell/PowerShell-IoT#installation)
 
+# What's available so far?
+This is still in a really early phase. So far I've been "designing" (if you can call it that way) the alphabet so that later we can send a whole text.
+
+* So far you can only play with setting the brightness `Set-Brightness` (Low, Medium or High)
+
+* Turn the leds off with `Set-LedsOff`
+
+* Write some letters (a string) with `Write-String`. The number of letters actually depend, but it's usually 3 because each letter is using 3 rows. "M" for example uses 5.
+
+After setting the whole alphabet and things to be displayed on the ScrollpHat, will work on a way to scroll the text.
+
+
 Any suggestion/contribution is really welcome!

@@ -11,13 +11,11 @@ After that, you need to install [PowerShell-IoT Module](https://github.com/Power
 # What's available so far?
 This is still in a really early phase. So far I've been "designing" (if you can call it that way) the alphabet so that later we can send a whole text.
 
-* So far you can only play with setting the brightness `Set-Brightness` (Low, Medium or High)
+* So far you can only play with setting the brightness `Set-Brightness` (Lowest, Low, Medium, High or Highest)
 
 * Turn the leds off with `Set-LedsOff`
 
-* Write some letters (a string) with `Write-String`. The number of letters actually depend, but it's usually 3 because each letter is using 3 rows. "M" for example uses 5.
-
-After setting the whole alphabet and things to be displayed on the ScrollpHat, will work on a way to scroll the text.
+* Write some letters (a string) with `Write-String`. By default, the text is scrolled forever, unless specified otherwise (by passing `$false` as second parameter)
 
 
 Any suggestion/contribution is really welcome!

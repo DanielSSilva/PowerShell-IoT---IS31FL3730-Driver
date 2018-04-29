@@ -1,14 +1,7 @@
 # Implement your module commands in this script.
-$registerObjectArray = @();
-for([int] $i = 1; $i -le 11<#numberOfRegisters#>; ++$i){
-    $registerObjectArray += [PSCustomObject]@{
-        Address = $i
-        InUse   = $false
-    }
-}
-New-Variable -Name "MatrixRegisters" -Value $registerObjectArray -Scope Script
 
-New-Variable -Name "InitialEmptyColumns" -Value 0x04, 0x08 -Option Constant -Scope Script
+New-Variable -Name "TotalRegisters" -Value 11 -Option Constant -Scope Script
+New-Variable -Name "CurrentRegisterValues" -Value @() -Scope Script
 
 function Select-ScrollpHat {
         [int]$DeviceAddress = 0x60
@@ -24,14 +17,23 @@ function Set-Brightness{
     [CmdletBinding()]
         param (
             [Parameter(Mandatory=$true)]
-            [ValidateSet('Low', 'Medium', 'High')]
+            [ValidateSet('Lowest','Low', 'Medium', 'High', 'Highest')]
             [string]$Intensity
         )
+
+        if($Intensity -eq 'Highest')
+        {
+            Write-Warning "This brightness setting causes some weird noise on my phat. I assume that's using too much energy. Use at your own risk!"
+        }
+
+
         [int]$LightningEffectRegisterAddress = 0x0D
         $IntensityMap = @{
-            Low = [convert]::toint32('0001001',2)
-            Medium = [convert]::toint32('0000000',2)
-            High = [convert]::toint32('0000111',2)
+            Lowest = [convert]::toint32('1000',2)
+            Low = [convert]::toint32('1001',2)
+            Medium = [convert]::toint32('1110',2)
+            High = [convert]::toint32('0001',2)
+            Highest = [convert]::toint32('0111',2)
         }
     Set-I2CRegister -Device $Script:Device -Register $LightningEffectRegisterAddress -Data $IntensityMap[$Intensity]
     Update-Registers
@@ -39,20 +41,25 @@ function Set-Brightness{
 
 function Write-String {
     param(
-        [string]$text
+        [string]$text,
+        [System.Boolean]$forever = $true
     )
-    for($i =0; $i -lt $text.Length ; ++$i)
+    Set-LedsOff
+    do
     {
-        Write-Char $text[$i]
-            #After Writing the char, make sure to leave a space.
-    $blankSpaceRegister = Get-NextAvailableRegisters 1
-    if($blankSpaceRegister -eq $null){ #we have reached the end of the registers....
-        return
-    }
-    Set-I2CRegister -Device $Script:Device -Register $blankSpaceRegister.Address -Data 0
-    $blankSpaceRegister.InUse = $true
-    }
-    Update-Registers
+        for($i =0; $i -lt $text.Length ; ++$i)
+        {
+            Write-Char $text[$i]
+                #After Writing the char, make sure to leave a space.
+
+            if($Script:CurrentRegisterValues.Count -lt $Script:TotalRegisters){ #We can still set an white column
+                $Script:CurrentRegisterValues += 0
+                Set-I2CRegister -Device $Script:Device -Register $Script:CurrentRegisterValues.Count -Data 0
+            }
+            Update-Registers
+            Start-Sleep -Milliseconds 10
+        }
+    }while($forever)
 }
 
 function Write-Char {
@@ -80,13 +87,48 @@ function Write-Char {
     ###################################
     #get respective bits from hashtable
     $bitsArray = $alphabet[$char] # this is an array with required data
-    $registers = Get-NextAvailableRegisters $bitsArray.Count
+    $totalRegistersRequired = $Script:CurrentRegisterValues.Count + $bitsArray.Count
+
+    $registers = ($Script:CurrentRegisterValues.Count+1) .. $totalRegistersRequired
+
+    if($totalRegistersRequired -gt $Script:TotalRegisters ) # this means that we will need to start shifting
+    {
+        $i = 0
+        $wroteWhiteSpace = $false
+        while($i -lt $bitsArray.Count)
+        {
+            #send the first value out.
+            $null, $Script:CurrentRegisterValues = $Script:CurrentRegisterValues
+
+            #SHIFT!
+            for($j = 1 ; $j -le 10; ++$j) #10 because we will leave the 11 to the new value
+            {
+                Set-I2CRegister -Device $Script:Device -Register $j -Data $Script:CurrentRegisterValues[$j-1]
+            }
+
+            #start by writing a white column
+            if($wroteWhiteSpace -eq $false)
+            {
+                Set-I2CRegister -Device $Script:Device -Register 0xB -Data 0
+                $Script:CurrentRegisterValues+= 0
+                Update-Registers
+                $wroteWhiteSpace = $true
+                continue
+            }
+
+            Set-I2CRegister -Device $Script:Device -Register 0xB -Data $bitsArray[$i]
+            $Script:CurrentRegisterValues += $bitsArray[$i++]
+            Update-Registers
+            #Start-Sleep -Milliseconds 200
+        }
+        return
+    }
+    #if we get here, this is one of the first letters
     $i = 0
     foreach($register in $registers)
     {
-        Set-I2CRegister -Device $Script:Device -Register $register.Address -Data $bitsArray[$i]
-        $register.InUse = $true
-        ++$i
+        Set-I2CRegister -Device $Script:Device -Register $register -Data $bitsArray[$i]
+        $Script:CurrentRegisterValues += $bitsArray[$i++]
     }
 }
 
@@ -97,11 +139,10 @@ function Update-Registers{
 }
 
 function Set-LedsOff {
-    foreach ($register in @($Script:MatrixRegisters | % {$_})) { # this weird sintax flattens the list.
-        Set-I2CRegister -Device $Script:Device -Register $register.Address -Data 0x0
-        $register.InUse = $false
+    foreach ($register in @(1 .. $Script:TotalRegisters)) {
+        Set-I2CRegister -Device $Script:Device -Register $register -Data 0x0
     }
-
+    $Script:CurrentRegisterValues = @()
     Update-Registers
 }
 
@@ -115,7 +156,15 @@ function Get-NextAvailableRegisters {
     param(
         [int]$numberOfRequiredRegisters
     )
-    $Script:MatrixRegisters | Where-Object {$_.InUse -eq $false} | Select-Object -First $numberOfRequiredRegisters
+
+    $availableRegisters = $Script:MatrixRegisters | Where-Object {$_.InUse -eq $false}
+
+    $requestedRegisters = $availableRegisters | Select-Object -First $numberOfRequiredRegisters
+
+    return [PSCustomObject]@{
+        RequestedRegisters = $requestedRegisters
+        TotalAvailable = $availableRegisters.Count
+    }
 
 }
 

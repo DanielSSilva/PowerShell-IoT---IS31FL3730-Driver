@@ -44,23 +44,28 @@ function Write-String {
     param(
         [parameter(ValueFromPipeline=$True)]
         [string]$text,
+        [int]$WaitMiliseconds = 40,
         [System.Boolean]$forever = $false
     )
     Set-LedsOff
+    $iterations = 0
+    Write-Host "Before While"
     do
     {
         for($i =0; $i -lt $text.Length ; ++$i)
         {
             Write-Char $text[$i]
                 #After Writing the char, make sure to leave a space.
-
+  #          Write-Host "Wrote char $($text[$i])"
             if($Script:CurrentRegisterValues.Count -lt $Script:TotalRegisters){ #We can still set an white column
                 $Script:CurrentRegisterValues += 0
                 Set-I2CRegister -Device $Script:Device -Register $Script:CurrentRegisterValues.Count -Data 0
             }
             Update-Registers
-            Start-Sleep -Milliseconds 10
+            Start-Sleep -Milliseconds $WaitMiliseconds
         }
+ #       $iterations +=1
+  #      Write-Host $iterations
     }while($forever)
 }
 
@@ -84,12 +89,19 @@ function Write-Char {
         K = 0x1F, 0x04, 0x1B
         L = 0x1F, 0x10, 0x10
         M = 0x1F, 0x02, 0x04, 0x02, 0x1F
-        N = 0x1F, 0x02, 0x0C,0x1F
+        N = 0x1F, 0x02, 0x0C, 0x1F
         O = 0x0E, 0x11, 0x0E
         P = 0x1F, 0x09, 0x06
-        Q = 0x0E, 0x11, 0x09,0x16
+        Q = 0x0E, 0x11, 0x09, 0x16
         R = 0x1F, 0x09, 0x16
         S = 0x12, 0x15, 0x09
+        T = 0x01, 0x1F, 0x01
+        U = 0x0F, 0x10, 0x10, 0x0F
+        V = 0x0F, 0x10, 0x0F
+        W = 0x0F, 0x10, 0x08,0x10,0x0F
+        X = 0x1D, 0x04, 0x1D
+        Y = 0x03, 0x1C, 0x03
+        Z = 0x19, 0x15, 0x13
         "1" = 0x12, 0x1F, 0x10
         "2" = 0x19, 0x15, 0x12
         "3" = 0x11, 0x15, 0x0A
@@ -101,6 +113,7 @@ function Write-Char {
         "9" = 0x02, 0x15, 0x0E
         "0" = 0x0E, 0x15, 0x0E
         "!" = 0x17
+        " " = 0X00,0X00
     }
     ###################################
     #get respective bits from hashtable
@@ -122,14 +135,16 @@ function Write-Char {
             for($j = 1 ; $j -le 10; ++$j) #10 because we will leave the 11 to the new value
             {
                 Set-I2CRegister -Device $Script:Device -Register $j -Data $Script:CurrentRegisterValues[$j-1]
+                Update-Registers
             }
+
 
             #start by writing a white column
             if($wroteWhiteSpace -eq $false)
             {
                 Set-I2CRegister -Device $Script:Device -Register 0xB -Data 0
                 $Script:CurrentRegisterValues+= 0
-                Update-Registers
+                #Update-Registers
                 $wroteWhiteSpace = $true
                 continue
             }
@@ -137,7 +152,7 @@ function Write-Char {
             Set-I2CRegister -Device $Script:Device -Register 0xB -Data $bitsArray[$i]
             $Script:CurrentRegisterValues += $bitsArray[$i++]
             Update-Registers
-            #Start-Sleep -Milliseconds 200
+            Start-Sleep -Milliseconds 5
         }
         return
     }

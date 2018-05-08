@@ -17,5 +17,9 @@ This is still in a really early phase. So far I've been "designing" (if you can 
 
 * Write some letters (a string) with `Write-String`. By default, the text is scrolled forever, unless specified otherwise (by passing `$false` as second parameter)
 
+# Example
+
+![](https://i.imgur.com/QSU76lP.gif)
+
 
 Any suggestion/contribution is really welcome!

@@ -9,9 +9,8 @@ If you don't have PowerShell installed on your Raspberry, follow [this guide](ht
 After that, you need to install [PowerShell-IoT Module](https://github.com/PowerShell/PowerShell-IoT#installation)
 
 # What's available so far?
-This is still in a really early phase. So far I've been "designing" (if you can call it that way) the alphabet so that later we can send a whole text.
 
-* So far you can only play with setting the brightness `Set-Brightness` (Lowest, Low, Medium, High or Highest)
+* Set the LEDs' brightness with `Set-Brightness` (Lowest, Low, Medium, High or Highest)
 
 * Turn the leds off with `Set-LedsOff`
 

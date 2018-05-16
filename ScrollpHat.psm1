@@ -13,7 +13,7 @@ function Select-ScrollpHat {
         $Script:Device
 }
 
-function Set-Brightness{
+function Set-PhatBrightness{
     [CmdletBinding()]
         param (
             [Parameter(Mandatory=$true)]
@@ -36,10 +36,10 @@ function Set-Brightness{
             Highest = [convert]::toint32('0111',2)
         }
     Set-I2CRegister -Device $Script:Device -Register $LightningEffectRegisterAddress -Data $IntensityMap[$Intensity]
-    Update-Registers
+    Update-PhatRegisters
 }
 
-function Write-String {
+function Write-PhatString {
     [CmdletBinding()]
     param(
         [parameter(ValueFromPipeline=$True)]
@@ -47,21 +47,24 @@ function Write-String {
         [int]$WaitMiliseconds = 40,
         [System.Boolean]$forever = $false
     )
-    Set-LedsOff
+    Set-PhatLedsOff
+    if($forever)
+    {
+        $text +="   "
+    }
     $iterations = 0
-    Write-Host "Before While"
     do
     {
         for($i =0; $i -lt $text.Length ; ++$i)
         {
-            Write-Char $text[$i]
+            Write-PhatChar $text[$i]
                 #After Writing the char, make sure to leave a space.
   #          Write-Host "Wrote char $($text[$i])"
             if($Script:CurrentRegisterValues.Count -lt $Script:TotalRegisters){ #We can still set an white column
                 $Script:CurrentRegisterValues += 0
                 Set-I2CRegister -Device $Script:Device -Register $Script:CurrentRegisterValues.Count -Data 0
             }
-            Update-Registers
+            Update-PhatRegisters
             Start-Sleep -Milliseconds $WaitMiliseconds
         }
  #       $iterations +=1
@@ -69,7 +72,7 @@ function Write-String {
     }while($forever)
 }
 
-function Write-Char {
+function Write-PhatChar {
     param(
         [ValidateLength(1,1)]
         [string]$char
@@ -114,6 +117,7 @@ function Write-Char {
         "0" = 0x0E, 0x15, 0x0E
         "!" = 0x17
         " " = 0X00,0X00
+        "-" = 0x04,0x04,0x04
     }
     ###################################
     #get respective bits from hashtable
@@ -135,24 +139,22 @@ function Write-Char {
             for($j = 1 ; $j -le 10; ++$j) #10 because we will leave the 11 to the new value
             {
                 Set-I2CRegister -Device $Script:Device -Register $j -Data $Script:CurrentRegisterValues[$j-1]
-                Update-Registers
+                #Update-PhatRegisters
             }
-
-
             #start by writing a white column
             if($wroteWhiteSpace -eq $false)
             {
                 Set-I2CRegister -Device $Script:Device -Register 0xB -Data 0
                 $Script:CurrentRegisterValues+= 0
-                #Update-Registers
+                #Update-PhatRegisters
                 $wroteWhiteSpace = $true
                 continue
             }
 
             Set-I2CRegister -Device $Script:Device -Register 0xB -Data $bitsArray[$i]
             $Script:CurrentRegisterValues += $bitsArray[$i++]
-            Update-Registers
-            Start-Sleep -Milliseconds 5
+            Update-PhatRegisters
+            #Start-Sleep -Milliseconds 5
         }
         return
     }
@@ -165,21 +167,21 @@ function Write-Char {
     }
 }
 
-function Update-Registers{
+function Update-PhatRegisters{
     [int]$UpdateRegisterAddress = 0x0C
     [int]$UpdateValue = 0xFF # for what I understood, it can be any value " A write operation of any 8-bit value to the Update Column Register is required to update the Data Registers"
     Set-I2CRegister -Device $Script:Device -Register $UpdateRegisterAddress -Data $UpdateValue
 }
 
-function Set-LedsOff {
+function Set-PhatLedsOff {
     foreach ($register in @(1 .. $Script:TotalRegisters)) {
         Set-I2CRegister -Device $Script:Device -Register $register -Data 0x0
     }
     $Script:CurrentRegisterValues = @()
-    Update-Registers
+    Update-PhatRegisters
 }
 
-function Reset-Registers {
+function Reset-PhatRegisters {
     $resetRegisterAddress = 0xFF
     $resetRegisterValue = 0xF #can be any value
     Set-I2CRegister -Device $Script:Device -Register $resetRegisterAddress -Data $resetRegisterValue
@@ -198,8 +200,37 @@ function Get-NextAvailableRegisters {
         RequestedRegisters = $requestedRegisters
         TotalAvailable = $availableRegisters.Count
     }
-
 }
+
+function Set-PhatCrazyLeds () {
+    $brightnessValues = 'Lowest','Low', 'Medium', 'High', 'Highest'
+    $iteration
+    while($true)
+    {
+        $randomRegister = Get-Random -Minimum 1 -Maximum 11
+        $randomValue = Get-Random -Minimum 0 -Maximum 17
+
+        Set-I2CRegister -Device $Script:Device -Register $randomRegister -Data $randomValue
+        #if($iteration % 4 -eq 0)
+        #{
+            $brightnessIndex = Get-Random -Minimum 0 -Maximum ($brightnessValues.Count-1)
+            Set-PhatBrightness -Intensity ($brightnessValues[$brightnessIndex])
+        #}
+
+        Update-PhatRegisters
+        Start-Sleep -Milliseconds 30
+        #++$iteration
+    }
+}
+
+# function Get-SpotifyCurrentlyPlayingInfo()
+# {
+#     $header = @{"Authorization" = Get-Content -Path "/home/pi/token.txt"}
+
+# $trackInfo = ((Invoke-WebRequest -Uri https://api.spotify.com/v1/me/player/currently-playing?market=PT -Headers $header).Content | ConvertFrom-Json).item
+
+# $trackInfo.Artists[0].Name + " - "+ $trackInfo.name
+# }
 
 Select-ScrollpHat
 

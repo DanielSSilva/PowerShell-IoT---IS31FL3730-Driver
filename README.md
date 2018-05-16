@@ -16,5 +16,9 @@ After that, you need to install [PowerShell-IoT Module](https://github.com/Power
 
 * Write some letters (a string) with `Write-String`. By default, the text is scrolled forever, unless specified otherwise (by passing `$false` as second parameter)
 
+# Example
+
+![](https://i.imgur.com/QSU76lP.gif)
+
 
 Any suggestion/contribution is really welcome!

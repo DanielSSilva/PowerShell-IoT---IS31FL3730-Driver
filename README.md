@@ -8,7 +8,7 @@ If you don't have PowerShell installed on your Raspberry, follow [this guide](ht
 
 After that, you need to install [PowerShell-IoT Module](https://github.com/PowerShell/PowerShell-IoT#installation)
 
-#Get Started
+# Get Started
 
 It's simple!
 ```

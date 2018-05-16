@@ -8,6 +8,16 @@ If you don't have PowerShell installed on your Raspberry, follow [this guide](ht
 
 After that, you need to install [PowerShell-IoT Module](https://github.com/PowerShell/PowerShell-IoT#installation)
 
+#Get Started
+
+It's simple!
+```
+git clone https://github.com/DanielSSilva/PowerShell-IoT---IS31FL3730-Driver.git
+cd ./PowerShell-IoT---IS31FL3730-Driver/
+sudo pwsh (if not already on PowerShell)
+Import-Module ./ScrollpHat.psm1 -Force
+Write-PhatString "HELLO WORLD" -WaitMiliseconds 50 -forever $true
+```
 # What's available so far?
 
 * Set the LEDs' brightness with `Set-Brightness` (Lowest, Low, Medium, High or Highest)

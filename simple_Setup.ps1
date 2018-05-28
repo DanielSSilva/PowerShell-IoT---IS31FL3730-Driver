@@ -17,7 +17,7 @@ Set-I2CRegister -Device $Device -Register $ConfigurationRegisterAddress -Data $C
 #           x   x
 
 $registers = 0x01..0x3
-$letterA = 0x3E, 0x05, 0x3E
+$letterA = 0x1E, 0x05, 0x1E
 
 $index = 0
 #Set the value on $letterA array on the correspondent register.

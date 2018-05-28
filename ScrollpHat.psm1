@@ -45,14 +45,14 @@ function Write-PhatString {
         [parameter(ValueFromPipeline=$True)]
         [string]$text,
         [int]$WaitMiliseconds = 40,
-        [System.Boolean]$forever = $false
+        [System.Management.Automation.SwitchParameter]$forever,
+        [int]$iterations = 0
     )
     Set-PhatLedsOff
-    if($forever)
+    if($forever -OR $iterations > 0)
     {
         $text +="   "
     }
-    $iterations = 0
     do
     {
         for($i =0; $i -lt $text.Length ; ++$i)
@@ -67,9 +67,9 @@ function Write-PhatString {
             Update-PhatRegisters
             Start-Sleep -Milliseconds $WaitMiliseconds
         }
- #       $iterations +=1
+        $iterations -=1
   #      Write-Host $iterations
-    }while($forever)
+    }while($iterations -lt 0 -OR $forever)
 }
 
 function Write-PhatChar {
@@ -233,6 +233,7 @@ function Set-PhatCrazyLeds () {
 # }
 
 Select-ScrollpHat
+Set-PhatBrightness -Intensity Lowest
 
 # Export only the functions using PowerShell standard verb-noun naming.
 # Be sure to list each exported functions in the FunctionsToExport field of the module manifest file.

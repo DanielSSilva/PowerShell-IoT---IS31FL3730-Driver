@@ -49,9 +49,10 @@ function Write-PhatString {
         [int]$iterations = 0
     )
     Set-PhatLedsOff
-    if($forever -OR $iterations > 0)
+    if($forever -or $iterations -gt 0)
     {
-        $text +="   "
+        $text +="  "
+        Write-Host "Added spaces"
     }
     do
     {
@@ -69,7 +70,7 @@ function Write-PhatString {
         }
         $iterations -=1
   #      Write-Host $iterations
-    }while($iterations -lt 0 -OR $forever)
+    }while($iterations -gt 0 -OR $forever)
 }
 
 function Write-PhatChar {

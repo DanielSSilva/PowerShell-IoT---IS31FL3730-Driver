@@ -42,6 +42,7 @@ New-Variable -Name "Alphabet" -Value  @{
 	"!" = 0x17
 	" " = 0X00,0X00
 	"-" = 0x04,0x04,0x04
+	":" = 0x0A
 } -Scope Script
 
 function Select-ScrollpHat {
@@ -52,6 +53,24 @@ function Select-ScrollpHat {
         $Script:Device = Get-I2CDevice -Id $DeviceAddress -FriendlyName phat
         Set-I2CRegister -Device $Device -Register $ConfigurationRegisterAddress -Data $ConfigurationRegisterValue
         $Script:Device
+}
+
+#Combine the following two Functions to define the LEDs' brightness. Maximum brightness:
+# - Set-PhatBrightnessByNumber 255
+# - Set-PhatBrightness Highest
+#Lowest:
+# - Set-PhatBrightnessByNumber 1
+# - Set-PhatBrightness Lowest
+function Set-PhatBrightnessByNumber{
+	[CmdletBinding()]
+        param (
+            [Parameter(Mandatory=$true)]
+            [ValidateRange(0,255)]
+            [int]$Intensity
+		)
+	[int]$PWMRegisterAddress = 0x19
+	Set-I2CRegister -Device $Script:Device -Register $PWMRegisterAddress -Data $Intensity
+	Update-PhatRegisters
 }
 
 function Set-PhatBrightness{
@@ -119,49 +138,7 @@ function Write-PhatChar {
         [ValidateLength(1,1)]
         [string]$char
     )
-    ##############TEMP#################
-    # $alphabet = @{
-    #     A = 0x3E, 0x05, 0x3E
-    #     B = 0x1F, 0x15, 0x0A
-    #     C = 0x0E, 0x11, 0x11
-    #     D = 0x1F, 0x11, 0x0E
-    #     E = 0x1F, 0x15, 0x11
-    #     F = 0x1F, 0x05, 0x01
-    #     G = 0x0E, 0x11, 0x1D
-    #     H = 0x1F, 0x04, 0x1F
-    #     I = 0x11, 0x1F, 0x11
-    #     J = 0x09, 0x11, 0x0F
-    #     K = 0x1F, 0x04, 0x1B
-    #     L = 0x1F, 0x10, 0x10
-    #     M = 0x1F, 0x02, 0x04, 0x02, 0x1F
-    #     N = 0x1F, 0x02, 0x0C, 0x1F
-    #     O = 0x0E, 0x11, 0x0E
-    #     P = 0x1F, 0x09, 0x06
-    #     Q = 0x0E, 0x11, 0x09, 0x16
-    #     R = 0x1F, 0x09, 0x16
-    #     S = 0x12, 0x15, 0x09
-    #     T = 0x01, 0x1F, 0x01
-    #     U = 0x0F, 0x10, 0x10, 0x0F
-    #     V = 0x0F, 0x10, 0x0F
-    #     W = 0x0F, 0x10, 0x08,0x10,0x0F
-    #     X = 0x1D, 0x04, 0x1D
-    #     Y = 0x03, 0x1C, 0x03
-    #     Z = 0x19, 0x15, 0x13
-    #     "1" = 0x12, 0x1F, 0x10
-    #     "2" = 0x19, 0x15, 0x12
-    #     "3" = 0x11, 0x15, 0x0A
-    #     "4" = 0x0E, 0x09, 0x1C
-    #     "5" = 0x17, 0x15, 0x09
-    #     "6" = 0x0E, 0x15, 0x08
-    #     "7" = 0x19, 0x05, 0x03
-    #     "8" = 0x0A, 0x15, 0x0A
-    #     "9" = 0x02, 0x15, 0x0E
-    #     "0" = 0x0E, 0x15, 0x0E
-    #     "!" = 0x17
-    #     " " = 0X00,0X00
-    #     "-" = 0x04,0x04,0x04
-    # }
-    ###################################
+
     #get respective bits from hashtable
     $bitsArray = $Script:Alphabet[$char] # this is an array with required data
     $totalRegistersRequired = $Script:CurrentRegisterValues.Count + $bitsArray.Count
@@ -174,24 +151,27 @@ function Write-PhatChar {
         $wroteWhiteSpace = $false
         while($i -lt $bitsArray.Count)
         {
-            #send the first value out.
-            $null, $Script:CurrentRegisterValues = $Script:CurrentRegisterValues
+			if( $Script:CurrentRegisterValues.Count -ge $Script:TotalRegisters)
+			{
+				#send the first value out.
+				$null, $Script:CurrentRegisterValues = $Script:CurrentRegisterValues
 
-            #SHIFT!
-            for($j = 1 ; $j -le 10; ++$j) #10 because we will leave the 11 to the new value
-            {
-                Set-I2CRegister -Device $Script:Device -Register $j -Data $Script:CurrentRegisterValues[$j-1]
-                #Update-PhatRegisters
-            }
-            #start by writing a white column
-            if($wroteWhiteSpace -eq $false)
-            {
-                Set-I2CRegister -Device $Script:Device -Register 0xB -Data 0
-                $Script:CurrentRegisterValues+= 0
-                #Update-PhatRegisters
-                $wroteWhiteSpace = $true
-                continue
-            }
+				#SHIFT!
+				for($j = 1 ; $j -le 10; ++$j) #10 because we will leave the 11 to the new value
+				{
+					Set-I2CRegister -Device $Script:Device -Register $j -Data $Script:CurrentRegisterValues[$j-1]
+					Update-PhatRegisters ########EDITED
+				}
+				#start by writing a white column
+				if($wroteWhiteSpace -eq $false)
+				{
+					Set-I2CRegister -Device $Script:Device -Register 0xB -Data 0
+					$Script:CurrentRegisterValues+= 0
+					#Update-PhatRegisters
+					$wroteWhiteSpace = $true
+					continue
+				}
+			}
 
             Set-I2CRegister -Device $Script:Device -Register 0xB -Data $bitsArray[$i]
             $Script:CurrentRegisterValues += $bitsArray[$i++]

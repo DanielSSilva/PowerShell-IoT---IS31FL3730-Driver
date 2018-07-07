@@ -112,7 +112,6 @@ function Write-PhatString {
     if($forever -or $iterations -gt 0)
     {
         $text +="  "
-        Write-Host "Added spaces"
     }
     do
     {
@@ -224,17 +223,9 @@ function Set-PhatCrazyLeds () {
     }
 }
 
-# function Get-SpotifyCurrentlyPlayingInfo()
-# {
-#     $header = @{"Authorization" = Get-Content -Path "/home/pi/token.txt"}
-
-# $trackInfo = ((Invoke-WebRequest -Uri https://api.spotify.com/v1/me/player/currently-playing?market=PT -Headers $header).Content | ConvertFrom-Json).item
-
-# $trackInfo.Artists[0].Name + " - "+ $trackInfo.name
-# }
-
 Select-ScrollpHat
 Set-PhatBrightness -Intensity Lowest
+Set-PhatBrightnessByNumber 10
 
 # Export only the functions using PowerShell standard verb-noun naming.
 # Be sure to list each exported functions in the FunctionsToExport field of the module manifest file.

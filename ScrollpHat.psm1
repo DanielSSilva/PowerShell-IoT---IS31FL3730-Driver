@@ -43,6 +43,14 @@ New-Variable -Name "Alphabet" -Value  @{
 	" " = 0X00,0X00
 	"-" = 0x04,0x04,0x04
 	":" = 0x0A
+	"'" = 0x03
+	'"' = 0x03,0x03
+	"(" = 0x0E,0x11
+	")" = 0x11,0x0E
+	"[" = 0x1F,0x11
+	"]" = 0x11,0x1F
+	"{" = 0x04,0x1B,0x11
+	"}" = 0x11,0x1B,0x04
 } -Scope Script
 
 function Select-ScrollpHat {
@@ -221,6 +229,15 @@ function Set-PhatCrazyLeds () {
         Start-Sleep -Milliseconds 30
         #++$iteration
     }
+}
+
+function Get-SpotifyCurrentlyPlayingInfo()
+{
+    $header = @{"Authorization" = "Bearer $(Get-Content -Path "/home/pi/token.txt")"}
+	
+	$trackInfo = ((Invoke-WebRequest -Uri "https://api.spotify.com/v1/me/player/currently-playing?market=PT" -Headers $header).Content | ConvertFrom-Json).item
+
+$trackInfo.Artists[0].Name + " - "+ $trackInfo.name
 }
 
 Select-ScrollpHat
